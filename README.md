@@ -53,10 +53,13 @@ fits the scar back by back-propagating through the simulator. To avoid the *inve
 measurement is simulated on a grid twice as fine, averaged down and corrupted with noise. The fit cannot
 simply reproduce its own discretisation.
 
+![scar recovery](assets/scar_recovery.png)
+
 With the 4-parameter scar model, the scar **centre is recovered to within 0.2 grid cells**. The radius of
 this very dense scar (10 % conductivity) is underestimated: the coarse fitting grid blocks conduction where
 the fine measurement grid still conducts slowly. That model mismatch is real and is left visible on purpose.
-The per-pixel map, with total-variation regularisation, is experimental (see [docs/theory.md](docs/theory.md)).
+Overlap with the true scar (Dice) is 0.50 for the scar model and 0.64 for the per-pixel map with
+total-variation regularisation. The per-pixel fit is experimental (see [docs/theory.md](docs/theory.md)).
 
 ## What the tests check
 
