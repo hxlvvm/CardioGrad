@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cardiotorch"
+version = "0.1.0"
+description = "A small, differentiable 2D cardiac tissue simulator in PyTorch (Aliev-Panfilov), with inverse-problem tools"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Abdul Haleem"}]
+requires-python = ">=3.9"
+dependencies = ["torch>=2.0", "numpy"]
+keywords = ["cardiac", "electrophysiology", "pytorch", "differentiable-physics", "inverse-problems", "biomedical-engineering"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+[project.optional-dependencies]
+examples = ["matplotlib", "pillow"]
+dev = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/hxlvvm/cardiotorch"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
