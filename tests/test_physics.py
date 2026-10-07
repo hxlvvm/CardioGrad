@@ -100,3 +100,42 @@ def test_scar_parameters_are_recovered():
 def test_pixel_field_is_bounded():
     c = PixelField((5, 5), init=0.9)()
     assert torch.all((c > 0.05) & (c <= 1.0))
+
+
+def test_frames_are_identical_with_and_without_checkpointing():
+    tissue = Tissue((16, 16))
+    u0 = point_stimulus((16, 16), [(3, 3)], radius=2)
+    a = simulate(tissue, u0, dt=0.1, t_end=3.0, record_every=5)["frames"]
+    b = simulate(tissue, u0, dt=0.1, t_end=3.0, record_every=5, checkpoint_steps=7)["frames"]
+    assert a.shape == b.shape == (1, 6, 16, 16) and torch.allclose(a, b)
+
+
+def test_batch_matches_separate_runs():
+    tissue = Tissue((16, 16), d_long=1.0, d_trans=0.5, fibre_angle=0.4)
+    u0 = point_stimulus((16, 16), [(3, 3), (12, 10)], radius=2)
+    both = simulate(tissue, u0, dt=0.1, t_end=5.0)["u"]
+    for k in range(2):
+        assert torch.allclose(both[k], simulate(tissue, u0[k], dt=0.1, t_end=5.0)["u"], atol=1e-6)
+
+
+def test_stimuli_combine_and_are_validated():
+    tissue = Tissue((8, 8))
+    ones, zeros = torch.ones(8, 8), torch.zeros(8, 8)
+    out = simulate(tissue, zeros, dt=0.1, t_end=1.0, stimuli=[(0.5, ones), (0.5, zeros)])
+    assert out["u"].max() > 0.5                      # the second mask does not erase the first
+    with pytest.raises(ValueError):
+        simulate(tissue, zeros, dt=0.1, t_end=1.0, stimuli=[(5.0, ones)])
+
+
+def test_shapes_are_validated():
+    with pytest.raises(ValueError):
+        simulate(Tissue((10, 10)), torch.zeros(12, 10), dt=0.1, t_end=1.0)
+    with pytest.raises(ValueError):
+        simulate(Tissue((10, 10), conductivity=torch.ones(10, 12)), torch.zeros(10, 10), dt=0.1, t_end=1.0)
+
+
+def test_pseudo_ecg_unbatched_shape():
+    tissue = Tissue((20, 20))
+    frames = simulate(tissue, point_stimulus((20, 20), [(5, 5)], radius=2)[0], dt=0.1, t_end=10,
+                      record_every=10)["frames"]
+    assert pseudo_ecg(tissue, frames, electrodes=[(0, 0), (19, 19), (10, 0)]).shape == (3, 10)

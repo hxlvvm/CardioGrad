@@ -15,9 +15,9 @@ on the right is the pseudo-ECG it produces.*
   and is batched.
 - **Anisotropic conduction.** Each pixel has a fibre angle, along/across diffusivities and a conductivity
   map for scar and fibrosis. Diffusion is in conservative flux form with no-flux boundaries.
-- **Differentiable readouts:**
-  - a smooth activation time per cell;
-  - a pseudo-ECG at virtual electrodes.
+- **Readouts:**
+  - a smooth, differentiable activation time per cell;
+  - a pseudo-ECG at virtual electrodes (differentiable when given non-detached potentials).
 - **Inverse problems:**
   - recover a hidden scar (centre, radius, contrast), or a full per-pixel conductivity map with
     total-variation regularisation;
@@ -31,7 +31,7 @@ on the right is the pseudo-ECG it produces.*
 ```bash
 pip install torch --index-url https://download.pytorch.org/whl/cpu   # or a CUDA build
 pip install -e ".[examples,dev]"
-pytest -q                                 # physics + autodiff checks, about a minute on a laptop CPU
+pytest -q                                 # 14 physics/autodiff/API checks, about a minute on a CPU
 python examples/spiral_wave.py            # writes assets/spiral.gif
 python examples/recover_scar.py           # writes assets/scar_recovery.png
 ```
@@ -69,6 +69,8 @@ The per-pixel map, with total-variation regularisation, is experimental (see [do
 | `test_gradients_match_finite_differences` | `torch.autograd.gradcheck` through the whole simulation (float64) |
 | `test_checkpointing_gives_the_same_gradient` | memory saving does not change the gradient |
 | `test_scar_parameters_are_recovered` | an end-to-end inverse fit converges to the true scar centre |
+| `test_frames_are_identical_with_and_without_checkpointing`, `test_batch_matches_separate_runs` | API consistency: recording, checkpointing and batching do not change results |
+| `test_stimuli_combine_and_are_validated`, `test_shapes_are_validated` | inputs are checked with clear errors instead of silent misbehaviour |
 
 ## Design notes
 

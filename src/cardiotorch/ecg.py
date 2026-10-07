@@ -13,11 +13,16 @@ from .simulate import Tissue
 
 
 def pseudo_ecg(tissue: Tissue, frames: torch.Tensor, electrodes, height: float = 10.0) -> torch.Tensor:
-    """frames: (B, T, H, W) potentials; electrodes: list of (row, col) in grid units.
+    """frames: (B, T, H, W) or (T, H, W) potentials; electrodes: list of (row, col) in grid units.
 
-    Returns (B, n_electrodes, T).
+    Returns (B, n_electrodes, T), or (n_electrodes, T) for unbatched frames. Gradients of u are taken
+    in the interior only (zero on boundary cells). Differentiable if `frames` is.
     """
     h, w = tissue.shape
+    if tuple(frames.shape[-2:]) != (h, w):
+        raise ValueError(f"frames have spatial shape {tuple(frames.shape[-2:])}, tissue is {(h, w)}")
+    if frames.dim() == 3:
+        return pseudo_ecg(tissue, frames.unsqueeze(0), electrodes, height)[0]
     dxx, dyy, dxy = tissue.tensor(dtype=frames.dtype, device=frames.device)
     gx = torch.zeros_like(frames)
     gy = torch.zeros_like(frames)

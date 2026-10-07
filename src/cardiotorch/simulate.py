@@ -14,7 +14,7 @@ from .tissue import diffusion_tensor, divergence
 STABILITY_LIMIT = 0.2
 
 
-@dataclass
+@dataclass(eq=False)
 class Tissue:
     """A 2D sheet of tissue: grid spacing, diffusivities, fibre angle and a conductivity map."""
 
@@ -27,10 +27,15 @@ class Tissue:
     model: AlievPanfilov = field(default_factory=AlievPanfilov)
 
     def tensor(self, dtype=torch.float32, device=None):
-        c = self.conductivity
-        if c is None:
-            c = torch.ones(self.shape, dtype=dtype, device=device)
-        return diffusion_tensor(c, self.fibre_angle, self.d_long, self.d_trans)
+        """(Dxx, Dyy, Dxy) on the given dtype/device; maps must be scalars or match `shape`."""
+        c = torch.ones(self.shape) if self.conductivity is None else torch.as_tensor(self.conductivity)
+        theta = torch.as_tensor(self.fibre_angle)
+        for name, t in (("conductivity", c), ("fibre_angle", theta)):
+            if t.dim() > 0 and tuple(t.shape[-2:]) != tuple(self.shape):
+                raise ValueError(f"{name} has shape {tuple(t.shape)}, expected {tuple(self.shape)}")
+        c = c.to(dtype=dtype, device=device)
+        theta = theta.to(dtype=dtype, device=device)
+        return diffusion_tensor(c, theta, self.d_long, self.d_trans)
 
     def max_stable_dt(self) -> float:
         c_max = 1.0 if self.conductivity is None else float(torch.as_tensor(self.conductivity).max())
@@ -38,13 +43,14 @@ class Tissue:
         return STABILITY_LIMIT * self.dx ** 2 / d_max
 
 
-def point_stimulus(shape, centres, radius: float, dx: float = 1.0, dtype=torch.float32):
+def point_stimulus(shape, centres, radius: float, dx: float = 1.0, dtype=torch.float32, device=None):
     """Initial potential with u = 1 inside a disc around each centre (one batch entry per centre).
 
-    centres are (row, col) in grid units; returns a tensor of shape (len(centres), H, W).
+    centres are (row, col) in grid units, radius is in length units; returns (len(centres), H, W).
     """
     h, w = shape
-    yy, xx = torch.meshgrid(torch.arange(h, dtype=dtype), torch.arange(w, dtype=dtype), indexing="ij")
+    yy, xx = torch.meshgrid(torch.arange(h, dtype=dtype, device=device),
+                            torch.arange(w, dtype=dtype, device=device), indexing="ij")
     out = [((yy - r) ** 2 + (xx - c) ** 2 <= (radius / dx) ** 2).to(dtype) for r, c in centres]
     return torch.stack(out)
 
@@ -67,20 +73,31 @@ def simulate(tissue: Tissue, u0: torch.Tensor, *, dt: float, t_end: float, v0: t
       act_time    differentiable activation time per cell: the time spent before the cell first
                   crosses `threshold`, using a running soft maximum of sigmoid((u - threshold) / sharpness).
                   Cells never activated get ~t_end.
-      frames      u every `record_every` steps (stacked on dim 1) if requested
-    stimuli: optional list of (time, mask) applied as u = max(u, mask) at that time (e.g. S1-S2 protocols).
+      frames      u after every `record_every` steps (stacked on dim 1) if requested. Frames are detached
+                  copies for visualisation and analysis (not differentiable); the initial state is not included.
+    stimuli: optional list of (time, mask) applied as u = max(u, mask) before the step at that time
+    (e.g. S1-S2 protocols); 0 <= time < t_end. Masks at the same step are combined by their maximum.
     checkpoint_steps > 0 recomputes chunks of that many steps in the backward pass to save memory.
     reaction=False switches the reaction terms off (pure diffusion; used to test conservation).
     """
     if dt > tissue.max_stable_dt() * (1 + 1e-9):
         raise ValueError(f"dt={dt} exceeds the stable limit {tissue.max_stable_dt():.4g} for this tissue")
+    if tuple(u0.shape[-2:]) != tuple(tissue.shape):
+        raise ValueError(f"u0 has spatial shape {tuple(u0.shape[-2:])}, tissue is {tuple(tissue.shape)}")
     squeeze = u0.dim() == 2
     u = u0.unsqueeze(0) if squeeze else u0
     v = torch.zeros_like(u) if v0 is None else (v0.unsqueeze(0) if squeeze else v0)
     dxx, dyy, dxy = tissue.tensor(dtype=u.dtype, device=u.device)
     model = tissue.model if reaction else _NoReaction()
     n_steps = int(round(t_end / dt))
-    events = {int(round(t / dt)): m for t, m in (stimuli or [])}
+    if abs(t_end / dt - n_steps) > 1e-6:
+        raise ValueError(f"t_end={t_end} is not a whole number of steps of dt={dt}")
+    events: dict[int, torch.Tensor] = {}
+    for t, mask in stimuli or []:
+        k = int(round(t / dt))
+        if not 0 <= k < n_steps:
+            raise ValueError(f"stimulus time {t} is outside [0, t_end)")
+        events[k] = mask if k not in events else torch.maximum(events[k], mask)
 
     m = torch.sigmoid((u - threshold) / sharpness)
     act = torch.zeros_like(u)
@@ -99,6 +116,8 @@ def simulate(tissue: Tissue, u0: torch.Tensor, *, dt: float, t_end: float, v0: t
     i = 0
     while i < n_steps:
         j = min(i + size, n_steps)
+        if record_every > 0:                       # never step past a recording point
+            j = min(j, (i // record_every + 1) * record_every)
         if checkpoint_steps > 0 and torch.is_grad_enabled():
             u, v, m, act = checkpoint(chunk, u, v, m, act, i, j, use_reentrant=False)
         else:

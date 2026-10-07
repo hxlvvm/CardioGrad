@@ -17,9 +17,13 @@ from .simulate import Tissue, simulate
 
 
 class ScarModel(nn.Module):
+    """Smooth circular scar: conductivity 1 outside, 1 - (1 - c_min) * contrast inside."""
+
     def __init__(self, shape, centre, radius: float, contrast: float = 0.5, c_min: float = 0.05,
                  edge: float = 1.5):
         super().__init__()
+        if radius <= 0 or not 0 < contrast < 1:
+            raise ValueError("need radius > 0 and 0 < contrast < 1")
         self.shape, self.c_min, self.edge = tuple(shape), c_min, edge
         self.centre = nn.Parameter(torch.tensor(centre, dtype=torch.float32))
         self.log_radius = nn.Parameter(torch.tensor(math.log(radius), dtype=torch.float32))
@@ -27,8 +31,8 @@ class ScarModel(nn.Module):
 
     def forward(self) -> torch.Tensor:
         h, w = self.shape
-        yy, xx = torch.meshgrid(torch.arange(h, dtype=torch.float32), torch.arange(w, dtype=torch.float32),
-                                indexing="ij")
+        kw = dict(dtype=self.centre.dtype, device=self.centre.device)
+        yy, xx = torch.meshgrid(torch.arange(h, **kw), torch.arange(w, **kw), indexing="ij")
         dist = torch.sqrt((yy - self.centre[0]) ** 2 + (xx - self.centre[1]) ** 2 + 1e-6)
         inside = torch.sigmoid((torch.exp(self.log_radius) - dist) / self.edge)
         return 1.0 - (1.0 - self.c_min) * torch.sigmoid(self.contrast_logit) * inside
@@ -39,8 +43,12 @@ class ScarModel(nn.Module):
 
 
 class PixelField(nn.Module):
+    """One conductivity value per pixel, kept in (c_min, 1) by a sigmoid."""
+
     def __init__(self, shape, init: float = 0.9, c_min: float = 0.05):
         super().__init__()
+        if not c_min < init < 1:
+            raise ValueError("need c_min < init < 1")
         self.c_min = c_min
         p = (init - c_min) / (1 - c_min)
         self.logits = nn.Parameter(torch.full(tuple(shape), math.log(p / (1 - p))))
