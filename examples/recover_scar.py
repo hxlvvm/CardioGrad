@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 
-from cardiotorch import PixelField, ScarModel, Tissue, fit, point_stimulus, simulate
+from cardiograd import PixelField, ScarModel, Tissue, fit, point_stimulus, simulate
 
 torch.manual_seed(0)
 N, DT, T_END, NOISE = 64, 0.1, 110.0, 0.5

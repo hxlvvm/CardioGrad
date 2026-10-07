@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import torch
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-from cardiotorch import Tissue, pseudo_ecg, simulate
+from cardiograd import Tissue, pseudo_ecg, simulate
 
 N, DT, T_END, EVERY = 160, 0.05, 520.0, 60          # one frame every 3 time units
 

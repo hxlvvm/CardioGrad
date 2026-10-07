@@ -1,6 +1,6 @@
-# cardiotorch
+# CardioGrad
 
-[![tests](https://github.com/hxlvvm/cardiotorch/actions/workflows/tests.yml/badge.svg)](https://github.com/hxlvvm/cardiotorch/actions/workflows/tests.yml)
+[![tests](https://github.com/hxlvvm/CardioGrad/actions/workflows/tests.yml/badge.svg)](https://github.com/hxlvvm/CardioGrad/actions/workflows/tests.yml)
 
 **A small, tested, differentiable 2D cardiac tissue simulator in PyTorch.**
 It simulates electrical waves in heart tissue, including fibre direction, scar and spiral-wave arrhythmia,
@@ -40,7 +40,7 @@ python examples/recover_scar.py           # writes assets/scar_recovery.png
 
 ```python
 import torch
-from cardiotorch import Tissue, point_stimulus, simulate
+from cardiograd import Tissue, point_stimulus, simulate
 
 tissue = Tissue((128, 128), d_long=1.0, d_trans=0.25, fibre_angle=0.5)   # fibres at ~29 degrees
 u0 = point_stimulus((128, 128), [(64, 64)], radius=3)                     # pace from the centre
@@ -83,7 +83,7 @@ total-variation regularisation. The per-pixel fit is experimental (see [docs/the
   telescope, so the scheme is exactly conservative, which is tested.
 - **Stability.** Explicit Euler needs `dt · D_max / dx² ≤ 1/4` in 2D. Anisotropic cross terms tighten
   that, so `simulate` enforces 0.2.
-- **Smooth activation time.** A threshold crossing has no useful gradient. cardiotorch integrates
+- **Smooth activation time.** A threshold crossing has no useful gradient. CardioGrad integrates
   `1 − m(t)`, where `m` is a running maximum of `sigmoid((u − θ)/τ)`, so the activation time changes
   smoothly with the tissue.
 
@@ -94,7 +94,7 @@ total-variation regularisation. The per-pixel fit is experimental (see [docs/the
 
 ## Related work
 
-cardiotorch is a compact teaching and prototyping tool. It does not claim to be the first differentiable
+CardioGrad is a compact teaching and prototyping tool. It does not claim to be the first differentiable
 cardiac simulator.
 
 - Kashtanova et al., *Simultaneous data assimilation and cardiac electrophysiology model correction using

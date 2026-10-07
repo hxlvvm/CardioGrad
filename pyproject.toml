@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cardiotorch"
+name = "cardiograd"
 version = "0.1.0"
 description = "A small, differentiable 2D cardiac tissue simulator in PyTorch (Aliev-Panfilov), with inverse-problem tools"
 readme = "README.md"
@@ -23,7 +23,7 @@ examples = ["matplotlib", "pillow"]
 dev = ["pytest"]
 
 [project.urls]
-Homepage = "https://github.com/hxlvvm/cardiotorch"
+Homepage = "https://github.com/hxlvvm/CardioGrad"
 
 [tool.setuptools.packages.find]
 where = ["src"]

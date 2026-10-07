@@ -1,4 +1,4 @@
-# The ideas behind cardiotorch, in plain language
+# The ideas behind CardioGrad, in plain language
 
 ## 1. The heart as an excitable medium
 
@@ -76,7 +76,7 @@ The forward question is: *given the tissue, what activation pattern do we see?* 
 is needed: *given what we measured, what does the tissue look like?* Where is the scar? This is an
 **inverse problem**.
 
-cardiotorch is written entirely in PyTorch, so every operation is differentiable. PyTorch can therefore
+CardioGrad is written entirely in PyTorch, so every operation is differentiable. PyTorch can therefore
 compute how the activation-time misfit changes when the conductivity at any pixel changes, back through
 thousands of time steps. That is *automatic differentiation*, the same machinery used to train neural
 networks. With that gradient, an optimiser (Adam) adjusts the conductivity map step by step until the
@@ -85,7 +85,7 @@ simulated activation matches the measurement.
 A few details make this work:
 
 - **Activation time is not normally differentiable**, because it is the moment a cell crosses a
-  threshold. cardiotorch uses a smooth version: a soft "has it fired yet" indicator built from a sigmoid,
+  threshold. CardioGrad uses a smooth version: a soft "has it fired yet" indicator built from a sigmoid,
   integrated over time.
 - **Bounded parameters.** Conductivity passes through a sigmoid, so it can never leave its allowed range.
   That keeps the time step stable during the fit.

@@ -6,7 +6,7 @@ import math
 import pytest
 import torch
 
-from cardiotorch import PixelField, ScarModel, Tissue, fit, point_stimulus, pseudo_ecg, simulate
+from cardiograd import PixelField, ScarModel, Tissue, fit, point_stimulus, pseudo_ecg, simulate
 
 
 def strip_cv(d_long: float, d_trans: float | None = None, angle: float = 0.0, dx: float = 1.0) -> float:
