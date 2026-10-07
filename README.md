@@ -1,5 +1,7 @@
 # cardiotorch
 
+[![tests](https://github.com/hxlvvm/cardiotorch/actions/workflows/tests.yml/badge.svg)](https://github.com/hxlvvm/cardiotorch/actions/workflows/tests.yml)
+
 **A small, tested, differentiable 2D cardiac tissue simulator in PyTorch.**
 It simulates electrical waves in heart tissue, including fibre direction, scar and spiral-wave arrhythmia,
 and because every step is differentiable you can **fit tissue properties to data by gradient descent**.
