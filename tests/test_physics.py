@@ -1,4 +1,4 @@
-"""Physics and autodiff checks. Each test runs in seconds on a CPU (the scar fit takes about a minute)."""
+"""Physics, autodiff and API tests."""
 from __future__ import annotations
 
 import math

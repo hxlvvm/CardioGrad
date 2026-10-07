@@ -1,10 +1,4 @@
-"""Pseudo-ECG: the extracellular potential of the tissue sheet seen by electrodes above it.
-
-    phi(e, t) = - sum_cells  (D grad u) . grad(1 / r) * dx^2,   r = |x - e| with the electrode at height z0
-
-This is the classic dipole-source approximation (Plonsey); amplitudes are in arbitrary units, which is
-fine for waveform shape comparisons.
-"""
+"""Pseudo-ECG from the tissue's current dipoles."""
 from __future__ import annotations
 
 import torch
@@ -13,11 +7,7 @@ from .simulate import Tissue
 
 
 def pseudo_ecg(tissue: Tissue, frames: torch.Tensor, electrodes, height: float = 10.0) -> torch.Tensor:
-    """frames: (B, T, H, W) or (T, H, W) potentials; electrodes: list of (row, col) in grid units.
-
-    Returns (B, n_electrodes, T), or (n_electrodes, T) for unbatched frames. Gradients of u are taken
-    in the interior only (zero on boundary cells). Differentiable if `frames` is.
-    """
+    """frames: (B, T, H, W) or (T, H, W) potentials; electrodes: list of (row, col) in grid units."""
     h, w = tissue.shape
     if tuple(frames.shape[-2:]) != (h, w):
         raise ValueError(f"frames have spatial shape {tuple(frames.shape[-2:])}, tissue is {(h, w)}")

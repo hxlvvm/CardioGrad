@@ -1,11 +1,4 @@
-"""Spiral (re-entrant) wave from an S1-S2 protocol, with the pseudo-ECG it produces.
-
-S1: a plane wave from the left edge. S2: a second stimulus over the lower-left quadrant, timed so that it
-meets the refractory tail of S1; the wave can only spread one way and curls into a rotating spiral, the
-2D analogue of re-entrant arrhythmia. Writes assets/spiral.gif.
-
-    python examples/spiral_wave.py
-"""
+"""Spiral wave from an S1-S2 protocol, with its pseudo-ECG (writes assets/spiral.gif)."""
 from pathlib import Path
 
 import matplotlib

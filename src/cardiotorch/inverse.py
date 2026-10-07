@@ -1,10 +1,4 @@
-"""Recover tissue properties from activation maps by gradient descent through the simulator.
-
-Two parameterisations of the conductivity map c(x) in (c_min, 1]:
-  ScarModel   a smooth circular scar: centre, radius and contrast (4 parameters, well posed)
-  PixelField  one value per pixel (ill posed: use several pacing sites and total-variation regularisation)
-Both keep c inside its bounds with a sigmoid, so the explicit time step stays stable during the fit.
-"""
+"""Recover conductivity maps from activation times by gradient descent."""
 from __future__ import annotations
 
 import dataclasses
@@ -67,11 +61,7 @@ def total_variation(c: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
 def fit(param_model: nn.Module, tissue: Tissue, u0: torch.Tensor, observed: torch.Tensor, *, dt: float,
         t_end: float, steps: int = 100, lr: float = 0.05, tv_weight: float = 0.0, checkpoint_steps: int = 0,
         log_every: int = 0) -> list[float]:
-    """Minimise the mean squared activation-time misfit over the parameters of `param_model`.
-
-    u0: (B, H, W) initial conditions, one per pacing site; observed: (B, H, W) activation times.
-    Returns the loss history.
-    """
+    """Minimise the mean squared activation-time misfit over the parameters of `param_model`."""
     opt = torch.optim.Adam(param_model.parameters(), lr=lr)
     history = []
     for it in range(steps):

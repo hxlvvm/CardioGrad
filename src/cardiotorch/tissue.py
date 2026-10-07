@@ -1,13 +1,4 @@
-"""Anisotropic diffusion on a 2D grid in conservative (flux) form with no-flux boundaries.
-
-The diffusion tensor at each cell is  D = c * (D_t I + (D_l - D_t) f f^T),  f = (cos theta, sin theta),
-where c in (0, 1] is a local conductivity scale (c < 1 models fibrosis or scar), D_l / D_t are the
-along- and across-fibre diffusivities and theta is the fibre angle.
-
-Fluxes are evaluated on cell faces and the boundary fluxes are set to zero, so with the reaction term
-switched off the total sum of u is conserved exactly (the face fluxes telescope).
-Convention: tensors are (..., H, W); x runs along W (columns), y along H (rows).
-"""
+"""Anisotropic diffusion in flux form with no-flux boundaries."""
 from __future__ import annotations
 
 import torch

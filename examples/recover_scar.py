@@ -1,14 +1,4 @@
-"""Recover a hidden scar from noisy activation maps by differentiating through the simulator.
-
-The "measured" data are generated on a grid twice as fine as the one used for fitting, then averaged
-down and corrupted with noise, so the fit cannot simply reproduce its own discretisation.
-Two parameterisations are compared:
-  ScarModel   centre, radius and contrast of a circular scar (4 parameters)
-  PixelField  one conductivity per pixel with total-variation regularisation (experimental)
-Writes assets/scar_recovery.png and prints the recovery metrics.
-
-    python examples/recover_scar.py
-"""
+"""Recover a hidden scar from noisy activation maps (writes assets/scar_recovery.png)."""
 import time
 from pathlib import Path
 
