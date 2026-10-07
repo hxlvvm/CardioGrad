@@ -70,25 +70,35 @@ def terminates(tissue: Tissue, u0, v0, conductivity, dt: float, t_end: float, le
 
 
 def plan_ablation(tissue: Tissue, u0, v0, *, dt: float, horizon: float, steps: int = 60, lr: float = 0.3,
-                  area_weight: float = 1.0, tv_weight: float = 0.0, checkpoint_steps: int = 200,
+                  area_weight: float = 1.0, tv_weight: float = 0.0, samples: int = 8, checkpoint_steps: int = 200,
                   log_every: int = 10) -> tuple[LesionField, list[float]]:
-    """Optimise a lesion field that stops the spiral (u0, v0) within `horizon`."""
+    """Optimise a lesion field that stops the spiral (u0, v0) within `horizon`.
+
+    The activity term is the excited fraction averaged over `samples` times in the second half of the
+    horizon (a single end-time snapshot depends on the spiral's phase and gives a noisy gradient).
+    """
     lesion = LesionField(tissue.shape)
     opt = torch.optim.Adam(lesion.parameters(), lr=lr)
+    seg = horizon / 2 / samples
     history = []
     for it in range(steps):
         opt.zero_grad()
         c = lesion()
-        out = simulate(dataclasses.replace(tissue, conductivity=c), u0, v0=v0, dt=dt, t_end=horizon,
-                       checkpoint_steps=checkpoint_steps)
+        t = dataclasses.replace(tissue, conductivity=c)
+        out = simulate(t, u0, v0=v0, dt=dt, t_end=horizon / 2, checkpoint_steps=checkpoint_steps)
+        act = []
+        for _ in range(samples):
+            out = simulate(t, out["u"], v0=out["v"], dt=dt, t_end=seg, checkpoint_steps=checkpoint_steps)
+            act.append(active_fraction(out["u"]))
+        activity = torch.stack(act).mean()
         s = lesion.strength()
-        loss = active_fraction(out["u"]) + area_weight * s.mean()
+        loss = activity + area_weight * s.mean()
         if tv_weight > 0:
             loss = loss + tv_weight * total_variation(s)
         loss.backward()
         opt.step()
         history.append(float(loss))
         if log_every and (it % log_every == 0 or it == steps - 1):
-            print(f"  iter {it:3d}  loss {history[-1]:.4f}  active {float(active_fraction(out['u'])):.3f}  "
+            print(f"  iter {it:3d}  loss {history[-1]:.4f}  activity {float(activity):.3f}  "
                   f"area {float((s > 0.5).float().mean()) * 100:.2f} %", flush=True)
     return lesion, history

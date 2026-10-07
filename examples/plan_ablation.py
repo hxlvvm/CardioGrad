@@ -60,8 +60,8 @@ line_ok = terminates(tissue, u0, v0, lesion_conductivity(line), DT, CHECK)
 print(f"baseline straight lesion core->boundary: {int(line.sum())} px, stops spiral: {line_ok}")
 
 print("learning a lesion")
-lesion, hist = plan_ablation(tissue, u0, v0, dt=DT, horizon=HORIZON, steps=60, lr=0.3, area_weight=1.0,
-                             tv_weight=0.2)
+lesion, hist = plan_ablation(tissue, u0, v0, dt=DT, horizon=HORIZON, steps=100, lr=0.5, area_weight=0.3,
+                             tv_weight=0.2, samples=10)
 s = lesion.strength().detach()
 best = None
 for thr in (0.5, 0.4, 0.3, 0.2, 0.1):
